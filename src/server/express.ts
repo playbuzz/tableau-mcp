@@ -78,6 +78,10 @@ export async function startExpressServer({
   }
   middleware.push(latencyMiddleware());
 
+  app.get('/healthcheck', (_req, res) => {
+    res.status(200).json({ status: 'ok' });
+  });
+
   const path = `/${basePath}`;
   app.post(path, ...middleware, createMcpServer);
   app.get(
