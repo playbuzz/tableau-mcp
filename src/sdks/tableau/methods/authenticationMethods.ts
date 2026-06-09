@@ -72,6 +72,10 @@ export class AuthenticationMethods extends Methods<typeof authenticationApis> {
                     additionalPayload: authConfig.additionalPayload,
                   }),
                 };
+              case 'jwt-passthrough':
+                return {
+                  jwt: authConfig.jwt,
+                };
             }
           })()),
         },

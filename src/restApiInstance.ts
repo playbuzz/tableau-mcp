@@ -153,10 +153,21 @@ const getNewRestApiInstanceAsync = async (
     } else if (config.auth === 'oauth') {
       invariant(tableauAuthInfo, 'Tableau auth info not provided.');
 
-      signOutWhenCompleted = false;
       if (tableauAuthInfo?.type === 'Bearer') {
-        restApi.setBearerToken(tableauAuthInfo.raw);
+        // EAS / OBO flow: inbound bearer is a JWT signed by an external authz
+        // server that Tableau trusts (configured as External Authorization Server).
+        // Use it as the credentials.jwt body to /auth/signin and use the returned
+        // X-Tableau-Auth session for subsequent REST API calls. Tableau REST does
+        // not accept JWT as Authorization: Bearer — only via signin body.
+        await restApi.signIn({
+          type: 'jwt-passthrough',
+          siteName: config.siteName,
+          jwt: tableauAuthInfo.raw,
+        });
+        setSiteLuid?.(restApi.siteId);
+        setUserLuid?.(restApi.userId);
       } else if (tableauAuthInfo?.type === 'X-Tableau-Auth') {
+        signOutWhenCompleted = false;
         if (!tableauAuthInfo?.accessToken || !tableauAuthInfo?.userId) {
           throw new Error('Auth info is required when not signing in first.');
         }
